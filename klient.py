@@ -22,17 +22,24 @@ window.setLayout(layout)
 window.show()
 
 # Event handlers:
-new_messages = []
+new_messages = {}
 logged = False
 chatter = ""
+new_messages[chatter] = []
+login = 0
 
 
 def fetch_new_messages():
     while True:
         response = sock.recv(64)
         response = response.decode("utf-8")
-        if response:
-            new_messages.append(response)
+        if ';' in response:
+            [sender, new_message] = response.split(';')
+            if sender not in new_messages.keys():
+                new_messages[sender] = []
+            new_messages[sender].append(new_message)
+        elif response:
+            text_area.appendPlainText(response)
         sleep(.5)
 
 
@@ -41,23 +48,27 @@ thread.start()
 
 
 def display_new_messages():
-    while new_messages:
-        text_area.appendPlainText(new_messages.pop(0))
+    while new_messages[chatter]:
+        text_area.appendPlainText(chatter + ": " + new_messages[chatter].pop(0))
 
 
 def send_message():
-    global logged, chatter
+    global logged, chatter, login
 
     if not logged:
         sock.send(bytes('1' + message.text(), "utf-8"))
         logged = True
+        login = message.text()
         text_area.appendPlainText("Zalogowano. Podaj numer adresata")
     elif chatter is "":
-        chatter = message.text()
+        temp = message.text()
+        if temp not in new_messages.keys():
+            new_messages[temp] = []
+        chatter = temp
         text_area.appendPlainText("Zaczales czat z uzytkownikiem " + chatter)
     else:
         sock.send(bytes('2' + chatter + ';' + message.text(), "utf-8"))
-
+        text_area.appendPlainText(login + ": " + message.text())
     message.clear()
 
 
