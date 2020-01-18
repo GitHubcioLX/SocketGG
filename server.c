@@ -171,15 +171,14 @@ void *serve_single_client(void *arg) {
                     }
                     break;
                 default:
-                    printf("\nNie umiem wypierdalaj.");
+                    printf("\n");
                     break;
             }
             printf("\n");
-            write(c->cfd, &buf, buf_size);
             printf("\nLiczba uzytkownikow: %d\n", userCount);
         }
         sleep(1);
-        printf("\nSiema wieniu!");
+        printf("\nNasluchuje...");
         if(id > -1 && users[id].loggedIn == 1) passMessages(id);
     }
     close(c->cfd);
