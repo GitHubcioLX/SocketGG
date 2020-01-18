@@ -7,7 +7,7 @@ import socket
 import time
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(('192.168.0.21', 1237))
+sock.connect(('192.168.0.103', 1237))
 
 # GUI:
 app = QApplication([])
@@ -25,6 +25,7 @@ window.show()
 new_messages = {}
 logged = False
 chatter = ""
+new_messages["$"] = []
 new_messages[chatter] = []
 login = 0
 
@@ -48,8 +49,11 @@ thread.start()
 
 
 def display_new_messages():
-    while new_messages[chatter]:
-        text_area.appendPlainText(chatter + ": " + new_messages[chatter].pop(0))
+    while new_messages[chatter] or new_messages["$"]:
+        if new_messages["$"]:
+            text_area.appendPlainText("Error: " + new_messages["$"].pop(0))
+        else:
+            text_area.appendPlainText(chatter + ": " + new_messages[chatter].pop(0))
 
 
 def send_message():
@@ -60,7 +64,7 @@ def send_message():
         logged = True
         login = message.text()
         text_area.appendPlainText("Zalogowano. Podaj numer adresata")
-    elif chatter is "":
+    elif chatter == "":
         temp = message.text()
         if temp not in new_messages.keys():
             new_messages[temp] = []
@@ -68,6 +72,7 @@ def send_message():
         text_area.appendPlainText("Zaczales czat z uzytkownikiem " + chatter)
     else:
         sock.send(bytes('2' + chatter + ';' + message.text(), "utf-8"))
+
         text_area.appendPlainText(login + ": " + message.text())
     message.clear()
 
@@ -76,6 +81,7 @@ text_area.appendPlainText("Podaj swoj numer uzytkownika")
 message.returnPressed.connect(send_message)
 timer = QTimer()
 timer.timeout.connect(display_new_messages)
-timer.start(1000)
+timer.start(500)
 
 app.exec_()
+sock.send(bytes('0', "utf-8"))
