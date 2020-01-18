@@ -93,9 +93,7 @@ void *serve_single_client(void *arg) {
                 case '1':
                     if(id == -2) {
                         id = findUser(buf);
-                        if(id == -1) {
-                            printf("Tworze nowego uzytkownika");
-                            
+                        if(id == -1) {                            
                             //inicjalizacja nowego uzytkownika
                             User user;
                             user.number = malloc(sizeof(buf));
@@ -155,6 +153,9 @@ void *serve_single_client(void *arg) {
                         }
                         else {
                             printf("\nNie ma takiego numeru");
+                            memset(buf, 0, buf_size);
+                            strcpy(buf, "$;Odbiorca nie istnieje.");
+                            write(users[id].cfd, &buf, buf_size);
                         }
                     }
                     else {
@@ -164,21 +165,22 @@ void *serve_single_client(void *arg) {
                 case '0':
                     if(id > -1) {
                         users[id].loggedIn = 0;
-                        printf("\nUzytkownik o numerze %s wylogowal sie.", users[id].number);
+                        printf("Uzytkownik o numerze %s wylogowal sie.\n", users[id].number);
+                        close(c->cfd);
+                        free(c);
+                        return 0;
                     }
                     else {
-                        printf("\nBlad");
+                        printf("\nBlad.");
                     }
                     break;
                 default:
                     printf("\n");
                     break;
             }
-            printf("\n");
             printf("\nLiczba uzytkownikow: %d\n", userCount);
         }
         sleep(1);
-        printf("\nNasluchuje...");
         if(id > -1 && users[id].loggedIn == 1) passMessages(id);
     }
     close(c->cfd);
