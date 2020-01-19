@@ -78,6 +78,7 @@ chat_history[chatter] = []
 login = ""
 mutex = Lock()
 
+
 def fill_up_list():
     global chatters, new_messages, chatters_list
 
@@ -166,41 +167,40 @@ def display_chat_history():
         text_area.appendPlainText(msg)
 
 
+def open_chat(number):
+    global chatter, window, text_area, message, new_chatter
+
+    window.hide()
+    text_area.clear()
+    message.clear()
+    chatter = number
+    new_chatter.clear()
+    window.show()
+    text_area.appendPlainText("Zaczales czat z numerem " + chatter + ".")
+    display_chat_history()
+
+
 def open_chat_new():
-    global chatter, new_chatter, window, text_area, message, new_messages, chatters, chat_history
+    global new_chatter, new_messages, chatters, chat_history
 
     if new_chatter.text():
-        window.hide()
-        text_area.clear()
-        message.clear()
         temp = new_chatter.text()
         if temp not in new_messages.keys():
             new_messages[temp] = []
         if temp not in chatters and temp != "$":
             chatters.append(temp)
             chat_history[temp] = []
-        chatter = temp
-        new_chatter.clear()
-        window.show()
-        text_area.appendPlainText("Zaczales czat z numerem " + chatter + ".")
-        display_chat_history()
+
+        open_chat(temp)
 
 
 def open_chat_list(item):
-    global chatter, window, text_area, message, chat_history, new_chatter
-
     if emoji.emojize(':bell:') in item.text():
         [new, _] = item.text().split(' ')
     else:
         new = item.text()
-    window.hide()
-    text_area.clear()
-    message.clear()
-    chatter = new
-    new_chatter.clear()
-    window.show()
-    text_area.appendPlainText("Zaczales czat z numerem " + chatter + ".")
-    display_chat_history()
+
+    open_chat(new)
 
 
 def send_message():
