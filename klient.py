@@ -6,7 +6,7 @@ import socket
 import emoji
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(('192.168.0.24', 1237))
+sock.connect(('192.168.0.25', 1237))
 
 # GUI:
 app = QApplication([])
@@ -116,10 +116,10 @@ def fetch_new_messages():
     global new_messages, chatters, sock
 
     while True:
-        response = sock.recv(64)
+        response = sock.recv(128)
         response = response.decode("utf-8")
         if ';' in response:
-            [sender, new_message] = response.split(';')
+            [sender, new_message] = response.split(';', 1)
             if sender not in new_messages.keys():
                 mutex.acquire()
                 try:
@@ -183,15 +183,16 @@ def open_chat(number):
 def open_chat_new():
     global new_chatter, new_messages, chatters, chat_history
 
-    if new_chatter.text():
+    if new_chatter.text().isnumeric():
         temp = new_chatter.text()
         if temp not in new_messages.keys():
             new_messages[temp] = []
         if temp not in chatters and temp != "$":
             chatters.append(temp)
             chat_history[temp] = []
-
         open_chat(temp)
+    elif new_chatter.text():
+        print("Numer powinien skladac sie tylko z cyfr.")
 
 
 def open_chat_list(item):
@@ -206,10 +207,13 @@ def open_chat_list(item):
 def send_message():
     global chatter, login, sock, chat_history, message
 
-    sock.send(bytes('2' + chatter + ';' + message.text(), "utf-8"))
-    chat_history[chatter].append(login + ": " + message.text())
-    text_area.appendPlainText(login + ": " + message.text())
-    message.clear()
+    if len(message.text()) <= 110:
+        sock.send(bytes('2' + chatter + ';' + message.text(), "utf-8"))
+        chat_history[chatter].append(login + ": " + message.text())
+        text_area.appendPlainText(login + ": " + message.text())
+        message.clear()
+    else:
+        text_area.appendPlainText("Error: Wiadomosc jest za dluga.")
 
 
 def log_in():
@@ -222,7 +226,7 @@ def log_in():
         logged_label.setText("Zalogowano jako <b>" + login + "<\b>")
         main_window.show()
     else:
-        print("Numer musi skladac z maksymalnie 16 cyfr.")
+        print("Numer powinien skladac z maksymalnie 16 cyfr.")
 
 
 login_window.show()
@@ -242,7 +246,7 @@ timer.start(300)
 
 list_timer = QTimer()
 list_timer.timeout.connect(refresh_list)
-list_timer.start(500)
+list_timer.start(200)
 
 app.exec_()
 sock.send(bytes('0', "utf-8"))
