@@ -127,12 +127,12 @@ def fetch_new_messages():
                     mutex.release()
             if sender not in chatters and sender != "$":
                 chatters.append(sender)
+                chat_history[sender] = []
             mutex.acquire()
             try:
                 new_messages[sender].append(new_message)
             finally:
                 mutex.release()
-            chat_history[sender] = []
         sleep(.5)
 
 
