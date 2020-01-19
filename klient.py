@@ -1,11 +1,12 @@
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-from threading import Thread
+from threading import Thread, Lock
 from time import sleep
 import socket
+import emoji
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(('192.168.0.23', 1237))
+sock.connect(('192.168.0.24', 1237))
 
 # GUI:
 app = QApplication([])
@@ -76,7 +77,7 @@ new_messages["$"] = []
 new_messages[chatter] = []
 chat_history[chatter] = []
 login = ""
-
+mutex = Lock()
 
 def fill_up_list():
     global chatters, new_messages, chatters_list
@@ -84,7 +85,7 @@ def fill_up_list():
     chatters_list.clear()
     for one in chatters:
         if new_messages[one]:
-            item = one + " [NOWE!]"
+            item = one + " " + emoji.emojize(':bell:')
         else:
             item = one
         chatters_list.addItem(item)
@@ -99,7 +100,7 @@ def refresh_list():
         i = 0
         for one in chatters:
             if new_messages[one]:
-                x = one + " [NOWE!]"
+                x = one + " " + emoji.emojize(':bell:')
                 y = chatters_list.item(i).text()
                 if x != y:
                     chatters_list.item(i).setText(x)
@@ -120,10 +121,18 @@ def fetch_new_messages():
         if ';' in response:
             [sender, new_message] = response.split(';')
             if sender not in new_messages.keys():
-                new_messages[sender] = []
+                mutex.acquire()
+                try:
+                    new_messages[sender] = []
+                finally:
+                    mutex.release()
             if sender not in chatters and sender != "$":
                 chatters.append(sender)
-            new_messages[sender].append(new_message)
+            mutex.acquire()
+            try:
+                new_messages[sender].append(new_message)
+            finally:
+                mutex.release()
             #fill_up_list()
         sleep(.5)
 
@@ -136,10 +145,17 @@ def display_new_messages():
     global chatter, window, new_messages, text_area, chat_history
 
     while window.isVisible() and (new_messages[chatter] or new_messages["$"]):
+        mutex.acquire()
         if new_messages["$"]:
-            text_area.appendPlainText("Error: " + new_messages["$"].pop(0))
+            try:
+                text_area.appendPlainText("Error: " + new_messages["$"].pop(0))
+            finally:
+                mutex.release()
         else:
-            temp = chatter + ": " + new_messages[chatter].pop(0)
+            try:
+                temp = chatter + ": " + new_messages[chatter].pop(0)
+            finally:
+                mutex.release()
             text_area.appendPlainText(temp)
             chat_history[chatter].append(temp)
         #fill_up_list()
@@ -175,7 +191,7 @@ def open_chat_new():
 def open_chat_list(item):
     global chatter, window, text_area, message, chat_history, new_chatter
 
-    if '[NOWE!]' in item.text():
+    if emoji.emojize(':bell:') in item.text():
         [new, _] = item.text().split(' ')
     else:
         new = item.text()
