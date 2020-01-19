@@ -10,7 +10,7 @@
 #include <pthread.h>
 #include <string.h>
 
-#define buf_size 64
+#define buf_size 128
 #define max_nr_len 16
 
 struct Message {
@@ -114,16 +114,16 @@ void *serve_single_client(void *arg) {
                             users[id] = user;
                             pthread_mutex_unlock(&users_mutex);
 
-                            printf("\nNowy uzytkownik o numerze: %s", buf);
+                            printf("> Nowy uzytkownik o numerze: %s\n", buf);
                         }
                         else {
                             users[id].loggedIn = 1;
                             users[id].cfd = c->cfd;
-                            printf("\nZalogowano uzytkownika: %s", buf);
+                            printf("> Zalogowano uzytkownika: %s\n", buf);
                         }
                     }
                     else {
-                        printf("\nBlad.");
+                        printf("> Blad.\n");
                     }
                     break;
                 case '2':
@@ -133,10 +133,10 @@ void *serve_single_client(void *arg) {
                             index = (int)(found-buf);
                             strncpy(recvNumber, buf, index);
                             memmove(&buf[0], &buf[index+1], buf_size-index+1);
-                            printf("\nNowa wiadomosc od %s do %s: %s.", users[id].number, recvNumber, buf);
+                            printf("> Nowa wiadomosc od %s do %s: %s.\n", users[id].number, recvNumber, buf);
                         }
                         else {
-                            printf("\nBlad.");
+                            printf("> Blad.\n");
                         }
 
                         recvId = findUser(recvNumber);
@@ -156,26 +156,26 @@ void *serve_single_client(void *arg) {
                             pthread_mutex_unlock(&users[recvId].mutex);
                         }
                         else {
-                            printf("\nNie ma takiego numeru.");
+                            printf("> Nie ma takiego numeru.\n");
                             memset(buf, 0, buf_size);
                             strcpy(buf, "$;Odbiorca nie istnieje.");
                             write(users[id].cfd, &buf, buf_size);
                         }
                     }
                     else {
-                        printf("\nTylko zalogowani moga wysylac wiadomosci.");
+                        printf("> Tylko zalogowani moga wysylac wiadomosci.\n");
                     }
                     break;
                 case '0':
                     if(id > -1) {
                         users[id].loggedIn = 0;
-                        printf("Uzytkownik o numerze %s wylogowal sie.\n", users[id].number);
+                        printf("> Uzytkownik o numerze %s wylogowal sie.\n", users[id].number);
                         close(c->cfd);
                         free(c);
                         return 0;
                     }
                     else {
-                        printf("Niezalogowany uzytkownik wyszedl.\n");
+                        printf("> Niezalogowany uzytkownik wyszedl.\n");
                         close(c->cfd);
                         free(c);
                         return 0;
@@ -185,9 +185,7 @@ void *serve_single_client(void *arg) {
                     printf("\n");
                     break;
             }
-            printf("\nLiczba uzytkownikow: %d\n", userCount);
         }
-        //sleep(1);
         if(id > -1 && users[id].loggedIn == 1) passMessages(id);
     }
     close(c->cfd);
