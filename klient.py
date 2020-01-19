@@ -5,7 +5,7 @@ from time import sleep
 import socket
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(('192.168.0.103', 1237))
+sock.connect(('192.168.0.23', 1237))
 
 # GUI:
 app = QApplication([])
@@ -202,7 +202,7 @@ def send_message():
 def log_in():
     global logged, login, sock, logged_label, login_window, main_window
 
-    if not logged:
+    if login_number.text().isnumeric() and len(login_number.text()) <= 16:
         sock.send(bytes('1' + login_number.text(), "utf-8"))
         logged = True
         login = login_number.text()
