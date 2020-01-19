@@ -42,18 +42,21 @@ int userCount = 0;
 pthread_mutex_t users_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void passMessages(int id) {
-    for(int i=users[id].messageCount-1; i>=0; i--)
+    while(users[id].messageCount > 0 && users[id].loggedIn == 1)
     {
         pthread_mutex_lock(&users[id].mutex);
 
         char buf[buf_size] = "";
-        strcat(buf, users[id].messages[i].senderNumber);
+        strcat(buf, users[id].messages[0].senderNumber);
         strcat(buf, ";");
-        strcat(buf, users[id].messages[i].text);
+        strcat(buf, users[id].messages[0].text);
 
         write(users[id].cfd, &buf, buf_size);
+        printf("Przekazalem wiadomosc: %s\n", buf);
 
         users[id].messageCount--;
+        if(users[id].messageCount > 0)
+            memmove(&users[id].messages[0], &users[id].messages[1], sizeof(Message)*users[id].messageCount);
         users[id].messages = realloc(users[id].messages, sizeof(Message)*users[id].messageCount);
 
         pthread_mutex_unlock(&users[id].mutex);
@@ -86,9 +89,9 @@ void *serve_single_client(void *arg) {
         memset(recvNumber, 0, max_nr_len);
         bytesRead = recv(c->cfd, buf, buf_size, MSG_DONTWAIT);
         if(bytesRead > 0) {
-            flag = buf[0];
-            memmove(&buf[0], &buf[1], buf_size);
+            flag = buf[0];            
             printf("\nOdebrano wiadomosc: %s\n", buf);
+            memmove(&buf[0], &buf[1], buf_size);
             switch(flag) {
                 case '1':
                     if(id == -2) {
@@ -171,7 +174,10 @@ void *serve_single_client(void *arg) {
                         return 0;
                     }
                     else {
-                        printf("\nBlad.");
+                        printf("Niezalogowany uzytkownik wyszedl.\n");
+                        close(c->cfd);
+                        free(c);
+                        return 0;
                     }
                     break;
                 default:
@@ -180,7 +186,7 @@ void *serve_single_client(void *arg) {
             }
             printf("\nLiczba uzytkownikow: %d\n", userCount);
         }
-        sleep(1);
+        //sleep(1);
         if(id > -1 && users[id].loggedIn == 1) passMessages(id);
     }
     close(c->cfd);
