@@ -12,7 +12,7 @@
 
 #define buf_size 64
 #define max_nr_len 16
- 
+
 struct Message {
     char *senderNumber;
     char *text;
@@ -30,7 +30,7 @@ struct User {
 };
 
 typedef struct User User;
- 
+
 struct cln {
     int cfd;
     struct sockaddr_in caddr;
@@ -40,23 +40,23 @@ User *users;
 int userCount = 0;
 
 pthread_mutex_t users_mutex = PTHREAD_MUTEX_INITIALIZER;
- 
+
 void passMessages(int id) {
     for(int i=users[id].messageCount-1; i>=0; i--)
-    {        
+    {
         pthread_mutex_lock(&users[id].mutex);
-        
+
         char buf[buf_size] = "";
         strcat(buf, users[id].messages[i].senderNumber);
         strcat(buf, ";");
         strcat(buf, users[id].messages[i].text);
-        
+
         write(users[id].cfd, &buf, buf_size);
-        
+
         users[id].messageCount--;
         users[id].messages = realloc(users[id].messages, sizeof(Message)*users[id].messageCount);
-        
-        pthread_mutex_unlock(&users[id].mutex);       
+
+        pthread_mutex_unlock(&users[id].mutex);
     }
 }
 
@@ -68,7 +68,7 @@ int findUser(char *number)
     }
     return -1;
 }
- 
+
 void *serve_single_client(void *arg) {
     int bytesRead;
     char buf[buf_size];
@@ -79,7 +79,7 @@ void *serve_single_client(void *arg) {
     char recvNumber[max_nr_len]; //numer odbiorcy nadanej przez obslugiwanego uzytkownika wiadomosci
     int recvId; //id odbiorcy wiadomosci (na liscie 'users')
     struct cln* c = (struct cln*)arg;
-    printf("Connection from %s:%d\n", inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port);
+    printf("\nConnection from %s:%d\n", inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port);
 
     while(1) {
         memset(buf, 0, buf_size);
@@ -88,12 +88,12 @@ void *serve_single_client(void *arg) {
         if(bytesRead > 0) {
             flag = buf[0];
             memmove(&buf[0], &buf[1], buf_size);
-            printf("\n%s\n", buf);
+            printf("\nOdebrano wiadomosc: %s\n", buf);
             switch(flag) {
                 case '1':
                     if(id == -2) {
                         id = findUser(buf);
-                        if(id == -1) {                            
+                        if(id == -1) {
                             //inicjalizacja nowego uzytkownika
                             User user;
                             user.number = malloc(sizeof(buf));
@@ -103,14 +103,14 @@ void *serve_single_client(void *arg) {
                             user.messageCount = 0;
                             user.loggedIn = 1;
                             user.mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-                            
+
                             pthread_mutex_lock(&users_mutex);
                             id = userCount;
                             userCount++;
                             users = realloc(users, sizeof(User)*(userCount));
                             users[id] = user;
                             pthread_mutex_unlock(&users_mutex);
-                            
+
                             printf("\nNowy uzytkownik o numerze: %s", buf);
                         }
                         else {
@@ -134,32 +134,32 @@ void *serve_single_client(void *arg) {
                         else {
                             printf("\nBlad.");
                         }
-                        
+
                         recvId = findUser(recvNumber);
                         if(recvId != -1) {
                             pthread_mutex_lock(&users[recvId].mutex);
-                            
+
                             users[recvId].messageCount++;
                             users[recvId].messages = realloc(users[recvId].messages, sizeof(Message)*users[recvId].messageCount);
-                            
+
                             Message message;
                             message.senderNumber = malloc(sizeof(users[id].number));
                             strcpy(message.senderNumber, users[id].number);
-                            message.text = malloc(sizeof(buf));                        
-                            strcpy(message.text, buf);                        
+                            message.text = malloc(sizeof(buf));
+                            strcpy(message.text, buf);
                             users[recvId].messages[users[recvId].messageCount-1] = message;
-                            
+
                             pthread_mutex_unlock(&users[recvId].mutex);
                         }
                         else {
-                            printf("\nNie ma takiego numeru");
+                            printf("\nNie ma takiego numeru.");
                             memset(buf, 0, buf_size);
                             strcpy(buf, "$;Odbiorca nie istnieje.");
                             write(users[id].cfd, &buf, buf_size);
                         }
                     }
                     else {
-                        printf("\nTylko zalogowani moga wysylac wiadomosci");
+                        printf("\nTylko zalogowani moga wysylac wiadomosci.");
                     }
                     break;
                 case '0':
@@ -187,7 +187,7 @@ void *serve_single_client(void *arg) {
     free(c);
     return 0;
 }
- 
+
 int main() {
     struct sockaddr_in addr;
     pthread_t tid;
@@ -199,7 +199,7 @@ int main() {
         addr.sin_addr.s_addr = INADDR_ANY;
     bind(fd, (struct sockaddr*) &addr, sizeof(addr));
     listen(fd, 10);
- 
+
     users = malloc(sizeof(User));
     while(1) {
         struct cln* c = malloc(sizeof(struct cln));
