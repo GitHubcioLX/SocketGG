@@ -89,7 +89,7 @@ void *serve_single_client(void *arg) {
         memset(recvNumber, 0, max_nr_len);
         bytesRead = recv(c->cfd, buf, buf_size, MSG_DONTWAIT);
         if(bytesRead > 0) {
-            flag = buf[0];            
+            flag = buf[0];
             printf("\nOdebrano wiadomosc: %s\n", buf);
             memmove(&buf[0], &buf[1], buf_size);
             switch(flag) {
@@ -118,6 +118,7 @@ void *serve_single_client(void *arg) {
                         }
                         else {
                             users[id].loggedIn = 1;
+                            users[id].cfd = c->cfd;
                             printf("\nZalogowano uzytkownika: %s", buf);
                         }
                     }
