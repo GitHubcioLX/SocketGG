@@ -71,7 +71,6 @@ main_window.setLayout(main_layout)
 new_messages = {}
 chat_history = {}
 chatters = []
-logged = False
 chatter = ""
 new_messages["$"] = []
 new_messages[chatter] = []
@@ -133,7 +132,7 @@ def fetch_new_messages():
                 new_messages[sender].append(new_message)
             finally:
                 mutex.release()
-            #fill_up_list()
+            chat_history[sender] = []
         sleep(.5)
 
 
@@ -158,11 +157,10 @@ def display_new_messages():
                 mutex.release()
             text_area.appendPlainText(temp)
             chat_history[chatter].append(temp)
-        #fill_up_list()
 
 
 def display_chat_history():
-    global chat_history
+    global chat_history, text_area
 
     for msg in chat_history[chatter]:
         text_area.appendPlainText(msg)
@@ -180,12 +178,12 @@ def open_chat_new():
             new_messages[temp] = []
         if temp not in chatters and temp != "$":
             chatters.append(temp)
+            chat_history[temp] = []
         chatter = temp
-        #fill_up_list()
-        chat_history[chatter] = []
         new_chatter.clear()
         window.show()
         text_area.appendPlainText("Zaczales czat z numerem " + chatter + ".")
+        display_chat_history()
 
 
 def open_chat_list(item):
@@ -199,11 +197,10 @@ def open_chat_list(item):
     text_area.clear()
     message.clear()
     chatter = new
-    #fill_up_list()
-    chat_history[chatter] = []
     new_chatter.clear()
     window.show()
     text_area.appendPlainText("Zaczales czat z numerem " + chatter + ".")
+    display_chat_history()
 
 
 def send_message():
@@ -216,15 +213,16 @@ def send_message():
 
 
 def log_in():
-    global logged, login, sock, logged_label, login_window, main_window
+    global login, sock, logged_label, login_window, main_window
 
     if login_number.text().isnumeric() and len(login_number.text()) <= 16:
         sock.send(bytes('1' + login_number.text(), "utf-8"))
-        logged = True
         login = login_number.text()
         login_window.hide()
         logged_label.setText("Zalogowano jako <b>" + login + "<\b>")
         main_window.show()
+    else:
+        print("Numer musi skladac z maksymalnie 16 cyfr.")
 
 
 login_window.show()
